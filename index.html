@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Internal Marks Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f0efe9;
+      --border: rgba(0,0,0,0.12);
+      --border2: rgba(0,0,0,0.22);
+      --text: #1a1a18;
+      --text2: #5a5a56;
+      --text3: #9a9993;
+      --info-bg: #e6f1fb;
+      --info-text: #185fa5;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --good: #1D9E75;
+      --warn: #BA7517;
+      --bad: #E24B4A;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a18;
+        --surface: #242422;
+        --surface2: #2c2c2a;
+        --border: rgba(255,255,255,0.1);
+        --border2: rgba(255,255,255,0.2);
+        --text: #f0efe9;
+        --text2: #a0a09a;
+        --text3: #606059;
+        --info-bg: #0c447c;
+        --info-text: #b5d4f4;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .page-sub {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 3px;
+    }
+
+    .reset-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border2);
+      background: transparent;
+      font-size: 13px;
+      color: var(--text2);
+      cursor: pointer;
+    }
+    .reset-btn:hover { background: var(--surface2); }
+
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      padding: 9px 24px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border2);
+      background: transparent;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: var(--info-bg);
+      color: var(--info-text);
+      border-color: transparent;
+    }
+
+    .col-headers {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 0 0 6px;
+      margin-bottom: 4px;
+    }
+
+    .col-header {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .section {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .field-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .field-name { font-size: 14px; color: var(--text); }
+    .field-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+    .field-input-wrap { display: flex; align-items: center; gap: 6px; }
+    .field-input-wrap input {
+      width: 72px;
+      padding: 6px 10px;
+      border: 0.5px solid var(--border2);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      background: var(--surface2);
+      color: var(--text);
+      text-align: center;
+    }
+    .field-input-wrap input:focus { outline: none; border-color: var(--info-text); }
+
+    .max-label { font-size: 12px; color: var(--text3); white-space: nowrap; }
+
+    .weighted-val {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--info-text);
+      text-align: right;
+    }
+
+    .hybrid-scroll { max-height: 460px; overflow-y: auto; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 1.5rem;
+    }
+
+    .metric {
+      background: var(--surface2);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: center;
+    }
+    .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+    .metric-value { font-size: 28px; font-weight: 500; color: var(--text); }
+    .metric-value.good { color: var(--good); }
+    .metric-value.warn { color: var(--warn); }
+    .metric-value.bad  { color: var(--bad); }
+    .metric-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    .progress-bar-wrap {
+      grid-column: 1 / -1;
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.3s ease, background 0.3s;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 12px;
+      color: var(--text3);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header-row">
+    <div>
+      <div class="page-title">Internal Marks Calculator</div>
+      <div class="page-sub">Theory &amp; Hybrid subjects</div>
+    </div>
+    <button class="reset-btn" onclick="resetAll()">Reset</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('theory', event)">Theory</button>
+    <button class="tab" onclick="switchTab('hybrid', event)">Hybrid</button>
+  </div>
+
+  <!-- THEORY PANEL -->
+  <div id="theory-panel">
+    <div class="col-headers">
+      <span class="col-header">Component</span>
+      <span class="col-header">Marks obtained</span>
+      <span class="col-header" style="text-align:right">Weighted</span>
+    </div>
+    <div class="section">
+      <div class="section-title">Theory components (out of 40)</div>
+      <div class="field-row">
+        <div><div class="field-name">Assignment</div><div class="field-meta">Max 10 → Weight 10</div></div>
+        <div class="field-input-wrap"><input type="number" id="t-assign" min="0" max="10" placeholder="0" oninput="calcTheory()"><span class="max-label">/ 10</span></div>
+        <div class="weighted-val" id="tw-assign">—</div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">MST 1</div><div class="field-meta">Max 20 → Weight 10</div></div>
+        <div class="field-input-wrap"><input type="number" id="t-mst1" min="0" max="20" placeholder="0" oninput="calcTheory()"><span class="max-label">/ 20</span></div>
+        <div class="weighted-val" id="tw-mst1">—</div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">MST 2</div><div class="field-meta">Max 20 → Weight 10</div></div>
+        <div class="field-input-wrap"><input type="number" id="t-mst2" min="0" max="20" placeholder="0" oninput="calcTheory()"><span class="max-label">/ 20</span></div>
+        <div class="weighted-val" id="tw-mst2">—</div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Quiz</div><div class="field-meta">Max 4 → Weight 4</div></div>
+        <div class="field-input-wrap"><input type="number" id="t-quiz" min="0" max="4" placeholder="0" oninput="calcTheory()"><span class="max-label">/ 4</span></div>
+        <div class="weighted-val" id="tw-quiz">—</div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Surprise Test</div><div class="field-meta">Max 12 → Weight 4</div></div>
+        <div class="field-input-wrap"><input type="number" id="t-surp" min="0" max="12" placeholder="0" oninput="calcTheory()"><span class="max-label">/ 12</span></div>
+        <div class="weighted-val" id="tw-surp">—</div>
+      </div>
+      <div class="field-row">
+        <div><div class="field-name">Attendance</div><div class="field-meta">Max 2 → Weight 2</div></div>
+        <div class="field-input-wrap"><input type="number" id="t-att" min="0" max="2" placeholder="0" oninput="calcTheory()"><span class="max-label">/ 2</span></div>
+        <div class="weighted-val" id="tw-att">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-grid" id="theory-summary" style="display:none">
+    <div class="metric"><div class="metric-label">Total obtained</div><div class="metric-value" id="t-total">—</div><div class="metric-sub">out of 40</div></div>
+    <div class="metric"><div class="metric-label">Percentage</div><div class="metric-value" id="t-pct">—</div><div class="metric-sub">internal marks</div></div>
+    <div class="metric"><div class="metric-label">Status</div><div class="metric-value" id="t-status">—</div><div class="metric-sub" id="t-status-sub"></div></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="t-bar" style="width:0%"></div></div>
+  </div>
+
+  <!-- HYBRID PANEL -->
+  <div id="hybrid-panel" style="display:none">
+    <div class="col-headers">
+      <span class="col-header">Component</span>
+      <span class="col-header">Marks obtained</span>
+      <span class="col-header" style="text-align:right">Weighted</span>
+    </div>
+    <div class="section hybrid-scroll">
+      <div class="section-title">Hybrid components (out of 70)</div>
+      <div id="hybrid-fields"></div>
+    </div>
+  </div>
+
+  <div class="summary-grid" id="hybrid-summary" style="display:none">
+    <div class="metric"><div class="metric-label">Total obtained</div><div class="metric-value" id="h-total">—</div><div class="metric-sub">out of 70</div></div>
+    <div class="metric"><div class="metric-label">Percentage</div><div class="metric-value" id="h-pct">—</div><div class="metric-sub">internal marks</div></div>
+    <div class="metric"><div class="metric-label">Status</div><div class="metric-value" id="h-status">—</div><div class="metric-sub" id="h-status-sub"></div></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="h-bar" style="width:0%"></div></div>
+  </div>
+
+  <footer>Made with ❤️ for college use</footer>
+</div>
+
+<script>
+const hybridComponents = [
+  { id: 'h-peval',  name: 'Practical Evaluations',         max: 40, weight: 20 },
+  { id: 'h-att',   name: 'Attendance',                     max: 2,  weight: 2  },
+  { id: 'h-surp',  name: 'Surprise Test',                  max: 12, weight: 4  },
+  { id: 'h-pmst',  name: 'Practical MST',                  max: 10, weight: 4  },
+  { id: 'h-pw1',   name: 'Practical Worksheet/Project 1',  max: 30, weight: 2  },
+  { id: 'h-pw2',   name: 'Practical Worksheet/Project 2',  max: 30, weight: 2  },
+  { id: 'h-pw3',   name: 'Practical Worksheet/Project 3',  max: 30, weight: 2  },
+  { id: 'h-pw4',   name: 'Practical Worksheet/Project 4',  max: 30, weight: 2  },
+  { id: 'h-pw5',   name: 'Practical Worksheet/Project 5',  max: 30, weight: 2  },
+  { id: 'h-pw6',   name: 'Practical Worksheet/Project 6',  max: 30, weight: 2  },
+  { id: 'h-pw7',   name: 'Practical Worksheet/Project 7',  max: 30, weight: 2  },
+  { id: 'h-pw8',   name: 'Practical Worksheet/Project 8',  max: 30, weight: 2  },
+  { id: 'h-pw9',   name: 'Practical Worksheet/Project 9',  max: 30, weight: 2  },
+  { id: 'h-pw10',  name: 'Practical Worksheet/Project 10', max: 30, weight: 2  },
+  { id: 'h-quiz',  name: 'Quiz',                           max: 4,  weight: 4  },
+  { id: 'h-assign',name: 'Assignment/PBL',                 max: 10, weight: 6  },
+  { id: 'h-mst1',  name: 'MST-1 Hybrid',                  max: 20, weight: 5  },
+  { id: 'h-mst2',  name: 'MST-2 Hybrid',                  max: 20, weight: 5  },
+];
+
+function buildHybrid() {
+  document.getElementById('hybrid-fields').innerHTML = hybridComponents.map(c => `
+    <div class="field-row">
+      <div><div class="field-name">${c.name}</div><div class="field-meta">Max ${c.max} → Weight ${c.weight}</div></div>
+      <div class="field-input-wrap"><input type="number" id="${c.id}" min="0" max="${c.max}" placeholder="0" oninput="calcHybrid()"><span class="max-label">/ ${c.max}</span></div>
+      <div class="weighted-val" id="${c.id}-w">—</div>
+    </div>
+  `).join('');
+}
+
+function switchTab(tab, e) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('theory-panel').style.display = tab === 'theory' ? '' : 'none';
+  document.getElementById('hybrid-panel').style.display = tab === 'hybrid' ? '' : 'none';
+  if (tab === 'theory') document.getElementById('hybrid-summary').style.display = 'none';
+  else document.getElementById('theory-summary').style.display = 'none';
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el && el.value !== '' ? parseFloat(el.value) : null;
+}
+
+function setWeighted(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val !== null ? val.toFixed(2) : '—';
+}
+
+function applyStatus(pct, totalId, pctId, statusId, subId, barId) {
+  const cls = pct >= 75 ? ' good' : pct >= 60 ? ' warn' : ' bad';
+  document.getElementById(totalId).className = 'metric-value' + cls;
+  document.getElementById(pctId).textContent = pct.toFixed(1) + '%';
+  document.getElementById(pctId).className = 'metric-value' + cls;
+  const bar = document.getElementById(barId);
+  bar.style.width = Math.min(pct, 100) + '%';
+  bar.style.background = pct >= 75 ? '#1D9E75' : pct >= 50 ? '#BA7517' : '#E24B4A';
+  const st = document.getElementById(statusId), sub = document.getElementById(subId);
+  if (pct >= 75) { st.textContent = 'Good';    st.className = 'metric-value good'; sub.textContent = 'Keep it up!'; }
+  else if (pct >= 60) { st.textContent = 'Average'; st.className = 'metric-value warn'; sub.textContent = 'Can be improved'; }
+  else { st.textContent = 'Low'; st.className = 'metric-value bad'; sub.textContent = 'Needs attention'; }
+}
+
+function calcTheory() {
+  const comps = [
+    { inId: 't-assign', outId: 'tw-assign', max: 10, weight: 10 },
+    { inId: 't-mst1',   outId: 'tw-mst1',   max: 20, weight: 10 },
+    { inId: 't-mst2',   outId: 'tw-mst2',   max: 20, weight: 10 },
+    { inId: 't-quiz',   outId: 'tw-quiz',   max: 4,  weight: 4  },
+    { inId: 't-surp',   outId: 'tw-surp',   max: 12, weight: 4  },
+    { inId: 't-att',    outId: 'tw-att',    max: 2,  weight: 2  },
+  ];
+  let total = 0, hasAny = false;
+  comps.forEach(c => {
+    const v = getVal(c.inId);
+    if (v !== null) { setWeighted(c.outId, (v / c.max) * c.weight); total += (v / c.max) * c.weight; hasAny = true; }
+    else setWeighted(c.outId, null);
+  });
+  const summary = document.getElementById('theory-summary');
+  if (hasAny) {
+    summary.style.display = 'grid';
+    document.getElementById('t-total').textContent = total.toFixed(2);
+    applyStatus((total / 40) * 100, 't-total', 't-pct', 't-status', 't-status-sub', 't-bar');
+  } else summary.style.display = 'none';
+}
+
+function calcHybrid() {
+  let total = 0, hasAny = false;
+  hybridComponents.forEach(c => {
+    const v = getVal(c.id);
+    if (v !== null) { const w = (v / c.max) * c.weight; setWeighted(c.id + '-w', w); total += w; hasAny = true; }
+    else setWeighted(c.id + '-w', null);
+  });
+  const summary = document.getElementById('hybrid-summary');
+  if (hasAny) {
+    summary.style.display = 'grid';
+    document.getElementById('h-total').textContent = total.toFixed(2);
+    applyStatus((total / 70) * 100, 'h-total', 'h-pct', 'h-status', 'h-status-sub', 'h-bar');
+  } else summary.style.display = 'none';
+}
+
+function resetAll() {
+  document.querySelectorAll('input[type=number]').forEach(i => i.value = '');
+  document.querySelectorAll('.weighted-val').forEach(e => e.textContent = '—');
+  document.getElementById('theory-summary').style.display = 'none';
+  document.getElementById('hybrid-summary').style.display = 'none';
+}
+
+buildHybrid();
+</script>
+</body>
+</html>
