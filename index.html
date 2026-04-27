@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Internal Marks Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0f1b2d;
+      --navy2: #162032;
+      --gold: #c9a84c;
+      --gold-light: #e8c97a;
+      --cream: #faf7f0;
+      --cream2: #f0ebe0;
+      --text: #1a1a2e;
+      --text2: #4a4a6a;
+      --text3: #8a8aaa;
+      --white: #ffffff;
+      --good: #1a9e6e;
+      --warn: #c47c0f;
+      --bad: #c0392b;
+      --error: #e74c3c;
+      --error-bg: #fdf2f1;
+      --error-border: #f5c6c2;
+      --radius: 12px;
+      --radius-sm: 7px;
+      --shadow: 0 2px 14px rgba(0,0,0,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--navy);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--gold);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.1;
+    }
+
+    .header-title span {
+      color: var(--gold-light);
+      font-style: italic;
+    }
+
+    .header-sub {
+      font-size: 10px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-pill {
+      background: rgba(201,168,76,0.15);
+      border: 1px solid rgba(201,168,76,0.4);
+      color: var(--gold-light);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 99px;
+    }
+
+    .reset-btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.6);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .reset-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── LAYOUT ── */
+    .app {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 1.2rem;
+      align-items: start;
+    }
+
+    /* Tab bar spans full width */
+    .tab-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      background: var(--white);
+      border: 1px solid #e0dbd0;
+      border-radius: var(--radius);
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--navy);
+      color: var(--gold-light);
+      box-shadow: 0 2px 8px rgba(15,27,45,0.25);
+    }
+
+    /* ── LEFT PANEL (inputs) ── */
+    .panel-left {
+      padding-right: 0.7rem;
+    }
+
+    /* ── RIGHT PANEL (results) ── */
+    .panel-right {
+      padding-left: 0.7rem;
+      position: sticky;
+      top: 70px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--white);
+      border: 1px solid #e8e2d8;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      background: var(--navy);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-header-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+    }
+
+    .card-header-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    .card-body {
+      padding: 0 14px;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .card-body::-webkit-scrollbar { width: 3px; }
+    .card-body::-webkit-scrollbar-track { background: transparent; }
+    .card-body::-webkit-scrollbar-thumb { background: #e0dbd0; border-radius: 99px; }
+
+    /* ── FIELD ROWS ── */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0ebe0;
+      position: relative;
+    }
+    .field-row:last-child { border-bottom: none; }
+
+    .field-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .field-meta { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .input-wrap input {
+      width: 64px;
+      padding: 6px 8px;
+      border: 1.5px solid #e0dbd0;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--cream);
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s;
+      -moz-appearance: textfield;
+    }
+    .input-wrap input::-webkit-outer-spin-button,
+    .input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .input-wrap input:focus { outline: none; border-color: var(--gold); background: var(--white); }
+    .input-wrap input.error { border-color: var(--error); background: var(--error-bg); color: var(--error); }
+    .input-wrap input.valid { border-color: #aed6c3; }
+
+    .max-lbl { font-size: 11px; color: var(--text3); white-space: nowrap; }
+    .w-val { font-size: 13px; font-weight: 600; color: var(--navy); min-width: 40px; text-align: right; }
+
+    /* ── INLINE ERROR ── */
+    .field-error {
+      display: none;
+      font-size: 10px;
+      color: var(--error);
+      font-weight: 500;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+    .field-error.show { display: block; }
+
+    /* ── TOAST ERROR BANNER ── */
+    .error-banner {
+      display: none;
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--error);
+      font-weight: 500;
+      align-items: center;
+      gap: 7px;
+    }
+    .error-banner.show { display: flex; }
+    .error-banner-icon { font-size: 14px; flex-shrink: 0; }
+
+    /* ── RESULTS PANEL ── */
+    .results-placeholder {
+      background: var(--white);
+      border: 1.5px dashed #e0dbd0;
+      border-radius: var(--radius);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text3);
+    }
+
+    .results-placeholder-icon { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.5; }
+    .results-placeholder-text { font-size: 13px; line-height: 1.5; }
+
+    .summary { display: none; }
+    .summary.visible { display: block; }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .metric {
+      background: var(--white);
+      border: 1px solid #e8e2d8;
+      border-radius: var(--radius);
+      padding: 1rem 0.75rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s;
+    }
+    .metric:hover { transform: translateY(-2px); }
+
+    .metric-icon { font-size: 18px; margin-bottom: 5px; }
+    .metric-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); margin-bottom: 5px; }
+    .metric-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .metric-value.good { color: var(--good); }
+    .metric-value.warn { color: var(--warn); }
+    .metric-value.bad  { color: var(--bad);  }
+    .metric-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
+
+    .progress-wrap {
+      background: var(--white);
+      border: 1px solid #e8e2d8;
+      border-radius: var(--radius);
+      padding: 0.85rem 1.2rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 8px;
+    }
+    .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 7px; }
+    .progress-track { height: 9px; background: var(--cream2); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1), background 0.3s; }
+
+    .motive-card {
+      background: var(--navy);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.4rem;
+      display: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .motive-card.visible { display: block; }
+    .motive-card::before {
+      content: '"';
+      position: absolute;
+      top: -10px; left: 14px;
+      font-family: 'Playfair Display', serif;
+      font-size: 100px;
+      color: var(--gold);
+      opacity: 0.1;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .motive-text {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.55;
+      position: relative;
+    }
+    .motive-author {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 7px;
+    }
+
+    /* ── RESPONSIVE ── */
+
+    /* Tablet: stack vertically but still side-by-side up to ~900px */
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+      .tab-bar { grid-column: 1; }
+      .panel-left { padding-right: 0; margin-bottom: 1rem; }
+      .panel-right { padding-left: 0; position: static; }
+      .card-body { max-height: 420px; }
+      .summary-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Mobile */
+    @media (max-width: 540px) {
+      .header { padding: 0.7rem 1rem; }
+      .badge-pill { display: none; }
+      .header-title { font-size: 0.95rem; }
+      .app { padding: 0.75rem; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .metric-value { font-size: 1.4rem; }
+      .field-row { grid-template-columns: 1fr auto auto; gap: 7px; }
+      .input-wrap input { width: 56px; font-size: 12px; }
+    }
+
+    @media (max-width: 360px) {
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── ANIMATIONS ── */
+    .summary.visible .metric {
+      animation: popIn 0.3s ease both;
+    }
+    .summary.visible .metric:nth-child(1) { animation-delay: 0.05s; }
+    .summary.visible .metric:nth-child(2) { animation-delay: 0.1s; }
+    .summary.visible .metric:nth-child(3) { animation-delay: 0.15s; }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.93) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="header-brand">
+    <div class="header-icon">🎓</div>
+    <div>
+      <div class="header-title">Internal Marks <span>Calculator</span></div>
+      <div class="header-sub">Academic Tool · 2025–26</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge-pill">Theory · Hybrid · Practical</span>
+    <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+  </div>
+</header>
+
+<!-- ── APP ── -->
+<div class="app">
+
+  <!-- Tab bar (full width) -->
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('theory', event)">📖 Theory Subject</button>
+    <button class="tab" onclick="switchTab('hybrid', event)">🔬 Hybrid Subject</button>
+    <button class="tab" onclick="switchTab('practical', event)">🧪 Practical Subject</button>
+  </div>
+
+  <!-- ══ THEORY PANEL ══ -->
+  <div id="theory-panel" style="display:contents">
+
+    <!-- Left: Inputs -->
+    <div class="panel-left">
+      <div id="t-error-banner" class="error-banner">
+        <span class="error-banner-icon">⚠️</span>
+        <span id="t-error-msg">Marks entered exceed the maximum allowed.</span>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">Theory components</span>
+          <span class="card-header-sub">Total out of 40</span>
+        </div>
+        <div class="card-body">
+          <div class="field-row">
+            <div><div class="field-name">Assignment</div><div class="field-meta">Max 10 → Weighted 10</div></div>
+            <div class="input-wrap">
+              <div class="input-row">
+                <input type="number" id="t-assign" min="0" max="10" placeholder="0" oninput="calcTheory()">
+                <span class="max-lbl">/ 10</span>
+              </div>
+              <div class="field-error" id="t-assign-err">Max is 10</div>
+            </div>
+            <div class="w-val" id="tw-assign">—</div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-name">MST 1</div><div class="field-meta">Max 20 → Weighted 10</div></div>
+            <div class="input-wrap">
+              <div class="input-row">
+                <input type="number" id="t-mst1" min="0" max="20" placeholder="0" oninput="calcTheory()">
+                <span class="max-lbl">/ 20</span>
+              </div>
+              <div class="field-error" id="t-mst1-err">Max is 20</div>
+            </div>
+            <div class="w-val" id="tw-mst1">—</div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-name">MST 2</div><div class="field-meta">Max 20 → Weighted 10</div></div>
+            <div class="input-wrap">
+              <div class="input-row">
+                <input type="number" id="t-mst2" min="0" max="20" placeholder="0" oninput="calcTheory()">
+                <span class="max-lbl">/ 20</span>
+              </div>
+              <div class="field-error" id="t-mst2-err">Max is 20</div>
+            </div>
+            <div class="w-val" id="tw-mst2">—</div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-name">Quiz</div><div class="field-meta">Max 4 → Weighted 4</div></div>
+            <div class="input-wrap">
+              <div class="input-row">
+                <input type="number" id="t-quiz" min="0" max="4" placeholder="0" oninput="calcTheory()">
+                <span class="max-lbl">/ 4</span>
+              </div>
+              <div class="field-error" id="t-quiz-err">Max is 4</div>
+            </div>
+            <div class="w-val" id="tw-quiz">—</div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-name">Surprise Test</div><div class="field-meta">Max 12 → Weighted 4</div></div>
+            <div class="input-wrap">
+              <div class="input-row">
+                <input type="number" id="t-surp" min="0" max="12" placeholder="0" oninput="calcTheory()">
+                <span class="max-lbl">/ 12</span>
+              </div>
+              <div class="field-error" id="t-surp-err">Max is 12</div>
+            </div>
+            <div class="w-val" id="tw-surp">—</div>
+          </div>
+          <div class="field-row">
+            <div><div class="field-name">Attendance</div><div class="field-meta">Max 2 → Weighted 2</div></div>
+            <div class="input-wrap">
+              <div class="input-row">
+                <input type="number" id="t-att" min="0" max="2" placeholder="0" oninput="calcTheory()">
+                <span class="max-lbl">/ 2</span>
+              </div>
+              <div class="field-error" id="t-att-err">Max is 2</div>
+            </div>
+            <div class="w-val" id="tw-att">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="panel-right">
+      <div id="theory-placeholder" class="results-placeholder">
+        <div class="results-placeholder-icon">📊</div>
+        <div class="results-placeholder-text">Enter your marks on the left<br>to see your results here.</div>
+      </div>
+      <div class="summary" id="theory-summary">
+        <div class="section-label">Your result</div>
+        <div class="summary-grid">
+          <div class="metric">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-label">Total</div>
+            <div class="metric-value" id="t-total">—</div>
+            <div class="metric-sub">out of 40</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon">📊</div>
+            <div class="metric-label">Percentage</div>
+            <div class="metric-value" id="t-pct">—</div>
+            <div class="metric-sub">of internal marks</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon">🏆</div>
+            <div class="metric-label">Status</div>
+            <div class="metric-value" id="t-status" style="font-size:1rem; padding-top:4px;">—</div>
+            <div class="metric-sub" id="t-status-sub"></div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress toward full marks</span><span id="t-bar-lbl">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="t-bar" style="width:0%"></div></div>
+        </div>
+        <div class="motive-card" id="t-motive">
+          <div class="motive-text" id="t-motive-text"></div>
+          <div class="motive-author" id="t-motive-author"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HYBRID PANEL ══ -->
+  <div id="hybrid-panel" style="display:none">
+
+    <!-- Left: Inputs -->
+    <div class="panel-left">
+      <div id="h-error-banner" class="error-banner">
+        <span class="error-banner-icon">⚠️</span>
+        <span id="h-error-msg">Marks entered exceed the maximum allowed.</span>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">Hybrid components</span>
+          <span class="card-header-sub">Total out of 70</span>
+        </div>
+        <div class="card-body" id="hybrid-fields"></div>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="panel-right">
+      <div id="hybrid-placeholder" class="results-placeholder">
+        <div class="results-placeholder-icon">📊</div>
+        <div class="results-placeholder-text">Enter your marks on the left<br>to see your results here.</div>
+      </div>
+      <div class="summary" id="hybrid-summary">
+        <div class="section-label">Your result</div>
+        <div class="summary-grid">
+          <div class="metric">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-label">Total</div>
+            <div class="metric-value" id="h-total">—</div>
+            <div class="metric-sub">out of 70</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon">📊</div>
+            <div class="metric-label">Percentage</div>
+            <div class="metric-value" id="h-pct">—</div>
+            <div class="metric-sub">of internal marks</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon">🏆</div>
+            <div class="metric-label">Status</div>
+            <div class="metric-value" id="h-status" style="font-size:1rem; padding-top:4px;">—</div>
+            <div class="metric-sub" id="h-status-sub"></div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress toward full marks</span><span id="h-bar-lbl">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="h-bar" style="width:0%"></div></div>
+        </div>
+        <div class="motive-card" id="h-motive">
+          <div class="motive-text" id="h-motive-text"></div>
+          <div class="motive-author" id="h-motive-author"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PRACTICAL PANEL ══ -->
+  <div id="practical-panel" style="display:none">
+
+    <!-- Left: Inputs -->
+    <div class="panel-left">
+      <div id="p-error-banner" class="error-banner">
+        <span class="error-banner-icon">⚠️</span>
+        <span id="p-error-msg">Marks entered exceed the maximum allowed.</span>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">Practical components</span>
+          <span class="card-header-sub">Total out of 100</span>
+        </div>
+        <div class="card-body" id="practical-fields"></div>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="panel-right">
+      <div id="practical-placeholder" class="results-placeholder">
+        <div class="results-placeholder-icon">🧪</div>
+        <div class="results-placeholder-text">Enter your marks on the left<br>to see your results here.</div>
+      </div>
+      <div class="summary" id="practical-summary">
+        <div class="section-label">Your result</div>
+        <div class="summary-grid">
+          <div class="metric">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-label">Total</div>
+            <div class="metric-value" id="p-total">—</div>
+            <div class="metric-sub">out of 100</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon">📊</div>
+            <div class="metric-label">Percentage</div>
+            <div class="metric-value" id="p-pct">—</div>
+            <div class="metric-sub">of internal marks</div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon">🏆</div>
+            <div class="metric-label">Status</div>
+            <div class="metric-value" id="p-status" style="font-size:1rem; padding-top:4px;">—</div>
+            <div class="metric-sub" id="p-status-sub"></div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label"><span>Progress toward full marks</span><span id="p-bar-lbl">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="p-bar" style="width:0%"></div></div>
+        </div>
+        <div class="motive-card" id="p-motive">
+          <div class="motive-text" id="p-motive-text"></div>
+          <div class="motive-author" id="p-motive-author"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── CARTOON MASCOT ── -->
+<div id="mascot-container" style="position:fixed;bottom:18px;right:18px;z-index:200;cursor:pointer;user-select:none;" onclick="mascotWiggle()" title="Click me!">
+  <svg width="80" height="100" viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Body -->
+    <ellipse cx="40" cy="72" rx="22" ry="24" fill="#c9a84c"/>
+    <!-- Graduation gown -->
+    <ellipse cx="40" cy="74" rx="20" ry="22" fill="#0f1b2d"/>
+    <!-- Arms -->
+    <ellipse cx="18" cy="72" rx="7" ry="4" fill="#0f1b2d" transform="rotate(-30 18 72)"/>
+    <ellipse cx="62" cy="72" rx="7" ry="4" fill="#0f1b2d" transform="rotate(30 62 72)"/>
+    <!-- Hands -->
+    <circle cx="13" cy="76" r="4" fill="#f5d08a"/>
+    <circle cx="67" cy="76" r="4" fill="#f5d08a"/>
+    <!-- Head -->
+    <ellipse cx="40" cy="38" rx="20" ry="22" fill="#f5d08a"/>
+    <!-- Ears -->
+    <ellipse cx="19" cy="38" rx="5" ry="7" fill="#f5d08a"/>
+    <ellipse cx="61" cy="38" rx="5" ry="7" fill="#f5d08a"/>
+    <ellipse cx="19" cy="38" rx="3" ry="5" fill="#f8c0a0"/>
+    <ellipse cx="61" cy="38" rx="3" ry="5" fill="#f8c0a0"/>
+    <!-- Eyes (big round) -->
+    <circle cx="32" cy="34" r="7" fill="white"/>
+    <circle cx="48" cy="34" r="7" fill="white"/>
+    <circle cx="33" cy="34" r="4" fill="#1a1a2e"/>
+    <circle cx="49" cy="34" r="4" fill="#1a1a2e"/>
+    <circle cx="34" cy="32" r="1.5" fill="white"/>
+    <circle cx="50" cy="32" r="1.5" fill="white"/>
+    <!-- Smile -->
+    <path d="M31 44 Q40 52 49 44" stroke="#b8622a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Rosy cheeks -->
+    <ellipse cx="26" cy="42" rx="5" ry="3" fill="#ffaaaa" opacity="0.5"/>
+    <ellipse cx="54" cy="42" rx="5" ry="3" fill="#ffaaaa" opacity="0.5"/>
+    <!-- Graduation cap -->
+    <rect x="22" y="16" width="36" height="5" rx="2" fill="#0f1b2d"/>
+    <ellipse cx="40" cy="16" rx="16" ry="4" fill="#162032"/>
+    <rect x="38" y="11" width="4" height="6" fill="#162032"/>
+    <rect x="36" y="9" width="8" height="4" rx="1" fill="#0f1b2d"/>
+    <!-- Tassel -->
+    <line x1="56" y1="16" x2="62" y2="24" stroke="#c9a84c" stroke-width="2"/>
+    <circle cx="62" cy="25" r="3" fill="#c9a84c"/>
+    <!-- Book in left hand -->
+    <rect x="4" y="72" width="14" height="10" rx="2" fill="#e8c97a"/>
+    <rect x="4" y="72" width="3" height="10" rx="1" fill="#c9a84c"/>
+    <line x1="7" y1="75" x2="17" y2="75" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="7" y1="78" x2="17" y2="78" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <!-- Pencil in right hand -->
+    <rect x="63" y="68" width="4" height="14" rx="1" fill="#ffdd57" transform="rotate(15 65 75)"/>
+    <polygon points="63,80 67,80 65,86" fill="#f8b500" transform="rotate(15 65 75)"/>
+    <rect x="63" y="68" width="4" height="3" rx="1" fill="#ff8c8c" transform="rotate(15 65 75)"/>
+    <!-- Legs -->
+    <rect x="30" y="92" width="8" height="8" rx="3" fill="#162032"/>
+    <rect x="42" y="92" width="8" height="8" rx="3" fill="#162032"/>
+    <!-- Shoes -->
+    <ellipse cx="34" cy="100" rx="7" ry="4" fill="#0a1020"/>
+    <ellipse cx="46" cy="100" rx="7" ry="4" fill="#0a1020"/>
+    <!-- Speech bubble (hidden by default) -->
+    <g id="speech-bubble" opacity="0">
+      <rect x="-55" y="5" width="60" height="24" rx="8" fill="white" stroke="#c9a84c" stroke-width="1.5"/>
+      <polygon points="-5,22 5,18 -5,18" fill="white" stroke="#c9a84c" stroke-width="1"/>
+      <polygon points="-5,22 5,18 -5,18" fill="white"/>
+      <text x="-48" y="19" font-family="DM Sans,sans-serif" font-size="7.5" fill="#0f1b2d" font-weight="600">Study hard! 📚</text>
+    </g>
+  </svg>
+</div>
+
+<script>
+const quotes = {
+  good: [
+    { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+    { text: "Excellence is not a destination but a continuous journey that never ends.", author: "Brian Tracy" },
+    { text: "Your hard work is paying off. Stay consistent and aim higher!", author: "" },
+  ],
+  warn: [
+    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+    { text: "Every champion was once a contender that refused to give up.", author: "" },
+    { text: "Push yourself, because no one else is going to do it for you.", author: "" },
+  ],
+  bad: [
+    { text: "Rock bottom became the solid foundation on which I rebuilt my life.", author: "J.K. Rowling" },
+    { text: "The harder the struggle, the more glorious the triumph.", author: "Swami Sivananda" },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  ]
+};
+
+const hybridComponents = [
+  { id:'h-peval',  name:'Practical Evaluations',           max:40, weight:20 },
+  { id:'h-att',    name:'Attendance',                       max:2,  weight:2  },
+  { id:'h-surp',   name:'Surprise Test',                    max:12, weight:4  },
+  { id:'h-pmst',   name:'Practical MST',                    max:10, weight:4  },
+  { id:'h-pw1',    name:'Practical Worksheet / Project 1',  max:30, weight:2  },
+  { id:'h-pw2',    name:'Practical Worksheet / Project 2',  max:30, weight:2  },
+  { id:'h-pw3',    name:'Practical Worksheet / Project 3',  max:30, weight:2  },
+  { id:'h-pw4',    name:'Practical Worksheet / Project 4',  max:30, weight:2  },
+  { id:'h-pw5',    name:'Practical Worksheet / Project 5',  max:30, weight:2  },
+  { id:'h-pw6',    name:'Practical Worksheet / Project 6',  max:30, weight:2  },
+  { id:'h-pw7',    name:'Practical Worksheet / Project 7',  max:30, weight:2  },
+  { id:'h-pw8',    name:'Practical Worksheet / Project 8',  max:30, weight:2  },
+  { id:'h-pw9',    name:'Practical Worksheet / Project 9',  max:30, weight:2  },
+  { id:'h-pw10',   name:'Practical Worksheet / Project 10', max:30, weight:2  },
+  { id:'h-quiz',   name:'Quiz',                             max:4,  weight:4  },
+  { id:'h-assign', name:'Assignment / PBL',                 max:10, weight:6  },
+  { id:'h-mst1',   name:'MST-1 Hybrid',                     max:20, weight:5  },
+  { id:'h-mst2',   name:'MST-2 Hybrid',                     max:20, weight:5  },
+];
+
+/* ── Build hybrid rows ── */
+function buildHybrid() {
+  document.getElementById('hybrid-fields').innerHTML = hybridComponents.map(c => `
+    <div class="field-row">
+      <div>
+        <div class="field-name">${c.name}</div>
+        <div class="field-meta">Max ${c.max} → Weighted ${c.weight}</div>
+      </div>
+      <div class="input-wrap">
+        <div class="input-row">
+          <input type="number" id="${c.id}" min="0" max="${c.max}" placeholder="0" oninput="calcHybrid()">
+          <span class="max-lbl">/ ${c.max}</span>
+        </div>
+        <div class="field-error" id="${c.id}-err">Max is ${c.max}</div>
+      </div>
+      <div class="w-val" id="${c.id}-w">—</div>
+    </div>
+  `).join('');
+}
+
+/* ── Tab switching ── */
+function switchTab(tab, e) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  const tp = document.getElementById('theory-panel');
+  const hp = document.getElementById('hybrid-panel');
+  const pp = document.getElementById('practical-panel');
+  tp.style.display = 'none';
+  hp.style.display = 'none';
+  pp.style.display = 'none';
+  if (tab === 'theory')         tp.style.display = 'contents';
+  else if (tab === 'hybrid')    hp.style.display = 'contents';
+  else                          pp.style.display = 'contents';
+}
+
+/* ── Helpers ── */
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el && el.value !== '' ? parseFloat(el.value) : null;
+}
+
+function setW(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val !== null ? val.toFixed(2) : '—';
+}
+
+/* ── Validate a single input ── */
+function validateInput(id, max) {
+  const el = document.getElementById(id);
+  const errEl = document.getElementById(id + '-err');
+  if (!el) return true;
+  const v = el.value !== '' ? parseFloat(el.value) : null;
+  const hasError = v !== null && (v > max || v < 0);
+  el.classList.toggle('error', hasError);
+  el.classList.toggle('valid', !hasError && v !== null);
+  if (errEl) errEl.classList.toggle('show', hasError);
+  return !hasError;
+}
+
+/* ── Show/hide top error banner ── */
+function setBanner(bannerId, msgId, errors) {
+  const banner = document.getElementById(bannerId);
+  const msg = document.getElementById(msgId);
+  if (errors.length > 0) {
+    banner.classList.add('show');
+    msg.textContent = `Invalid: ${errors.join(', ')} — value exceeds max marks.`;
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+/* ── Apply results ── */
+function applyResult(pct, ids, totalVal) {
+  const { totalId, pctId, statusId, subId, barId, barLblId, motiveId, motiveTextId, motiveAuthorId, summaryId, placeholderId } = ids;
+  const cls = pct >= 75 ? 'good' : pct >= 60 ? 'warn' : 'bad';
+
+  document.getElementById(totalId).textContent = totalVal.toFixed(2);
+  document.getElementById(totalId).className = 'metric-value ' + cls;
+  document.getElementById(pctId).textContent = pct.toFixed(1) + '%';
+  document.getElementById(pctId).className = 'metric-value ' + cls;
+
+  const bar = document.getElementById(barId);
+  bar.style.width = Math.min(pct, 100) + '%';
+  bar.style.background = pct >= 75 ? '#1a9e6e' : pct >= 60 ? '#c47c0f' : '#c0392b';
+  document.getElementById(barLblId).textContent = pct.toFixed(1) + '%';
+
+  const st = document.getElementById(statusId), sub = document.getElementById(subId);
+  if (pct >= 75) { st.textContent = 'Excellent'; st.className = 'metric-value good'; sub.textContent = 'Keep it up!'; }
+  else if (pct >= 60) { st.textContent = 'Average'; st.className = 'metric-value warn'; sub.textContent = 'Room to grow'; }
+  else { st.textContent = 'Low'; st.className = 'metric-value bad'; sub.textContent = 'Time to hustle!'; }
+
+  // Show summary, hide placeholder
+  document.getElementById(summaryId).classList.add('visible');
+  if (placeholderId) document.getElementById(placeholderId).style.display = 'none';
+
+  const pool = quotes[cls];
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById(motiveTextId).textContent = q.text;
+  document.getElementById(motiveAuthorId).textContent = q.author ? '— ' + q.author : '';
+  document.getElementById(motiveId).classList.add('visible');
+}
+
+/* ── Theory calc ── */
+function calcTheory() {
+  const comps = [
+    { inId:'t-assign', outId:'tw-assign', max:10, weight:10, label:'Assignment' },
+    { inId:'t-mst1',   outId:'tw-mst1',   max:20, weight:10, label:'MST 1'      },
+    { inId:'t-mst2',   outId:'tw-mst2',   max:20, weight:10, label:'MST 2'      },
+    { inId:'t-quiz',   outId:'tw-quiz',   max:4,  weight:4,  label:'Quiz'       },
+    { inId:'t-surp',   outId:'tw-surp',   max:12, weight:4,  label:'Surprise Test' },
+    { inId:'t-att',    outId:'tw-att',    max:2,  weight:2,  label:'Attendance' },
+  ];
+
+  let total = 0, hasAny = false;
+  const errorFields = [];
+
+  comps.forEach(c => {
+    const valid = validateInput(c.inId, c.max);
+    const v = getVal(c.inId);
+    if (!valid) { errorFields.push(c.label); setW(c.outId, null); return; }
+    if (v !== null) { const w = (v / c.max) * c.weight; setW(c.outId, w); total += w; hasAny = true; }
+    else setW(c.outId, null);
+  });
+
+  setBanner('t-error-banner', 't-error-msg', errorFields);
+
+  if (hasAny && errorFields.length === 0) {
+    applyResult((total / 40) * 100, {
+      totalId:'t-total', pctId:'t-pct', statusId:'t-status', subId:'t-status-sub',
+      barId:'t-bar', barLblId:'t-bar-lbl', motiveId:'t-motive',
+      motiveTextId:'t-motive-text', motiveAuthorId:'t-motive-author',
+      summaryId:'theory-summary', placeholderId:'theory-placeholder'
+    }, total);
+  } else if (!hasAny || errorFields.length > 0) {
+    if (!hasAny) {
+      document.getElementById('theory-summary').classList.remove('visible');
+      document.getElementById('t-motive').classList.remove('visible');
+      document.getElementById('theory-placeholder').style.display = '';
+    }
+  }
+}
+
+/* ── Hybrid calc ── */
+function calcHybrid() {
+  let total = 0, hasAny = false;
+  const errorFields = [];
+
+  hybridComponents.forEach(c => {
+    const valid = validateInput(c.id, c.max);
+    const v = getVal(c.id);
+    if (!valid) { errorFields.push(c.name); setW(c.id + '-w', null); return; }
+    if (v !== null) { const w = (v / c.max) * c.weight; setW(c.id + '-w', w); total += w; hasAny = true; }
+    else setW(c.id + '-w', null);
+  });
+
+  setBanner('h-error-banner', 'h-error-msg', errorFields);
+
+  if (hasAny && errorFields.length === 0) {
+    applyResult((total / 70) * 100, {
+      totalId:'h-total', pctId:'h-pct', statusId:'h-status', subId:'h-status-sub',
+      barId:'h-bar', barLblId:'h-bar-lbl', motiveId:'h-motive',
+      motiveTextId:'h-motive-text', motiveAuthorId:'h-motive-author',
+      summaryId:'hybrid-summary', placeholderId:'hybrid-placeholder'
+    }, total);
+  } else if (!hasAny) {
+    document.getElementById('hybrid-summary').classList.remove('visible');
+    document.getElementById('h-motive').classList.remove('visible');
+    document.getElementById('hybrid-placeholder').style.display = '';
+  }
+}
+
+/* ── Reset ── */
+function resetAll() {
+  document.querySelectorAll('input[type=number]').forEach(i => {
+    i.value = '';
+    i.classList.remove('error', 'valid');
+  });
+  document.querySelectorAll('.w-val').forEach(e => e.textContent = '—');
+  document.querySelectorAll('.field-error').forEach(e => e.classList.remove('show'));
+  document.querySelectorAll('.error-banner').forEach(e => e.classList.remove('show'));
+  ['theory-summary','hybrid-summary','practical-summary','t-motive','h-motive','p-motive'].forEach(id => {
+    document.getElementById(id).classList.remove('visible');
+  });
+  document.getElementById('theory-placeholder').style.display = '';
+  document.getElementById('hybrid-placeholder').style.display = '';
+  document.getElementById('practical-placeholder').style.display = '';
+}
+
+buildHybrid();
+
+const practicalComponents = [
+  { id:'p-viva',  name:'External Viva / Voce',  max:40, weight:40  },
+  { id:'p-exp1',  name:'Experiment-1',           max:30, weight:4.5 },
+  { id:'p-exp2',  name:'Experiment-2',           max:30, weight:4.5 },
+  { id:'p-exp3',  name:'Experiment-3',           max:30, weight:4.5 },
+  { id:'p-exp4',  name:'Experiment-4',           max:30, weight:4.5 },
+  { id:'p-exp5',  name:'Experiment-5',           max:30, weight:4.5 },
+  { id:'p-exp6',  name:'Experiment-6',           max:30, weight:4.5 },
+  { id:'p-exp7',  name:'Experiment-7',           max:30, weight:4.5 },
+  { id:'p-exp8',  name:'Experiment-8',           max:30, weight:4.5 },
+  { id:'p-exp9',  name:'Experiment-9',           max:30, weight:4.5 },
+  { id:'p-exp10', name:'Experiment-10',          max:30, weight:4.5 },
+  { id:'p-mterm', name:'Mid-Term Test',          max:15, weight:15  },
+];
+
+function buildPractical() {
+  document.getElementById('practical-fields').innerHTML = practicalComponents.map(c => `
+    <div class="field-row">
+      <div>
+        <div class="field-name">${c.name}</div>
+        <div class="field-meta">Max ${c.max} → Weighted ${c.weight}</div>
+      </div>
+      <div class="input-wrap">
+        <div class="input-row">
+          <input type="number" id="${c.id}" min="0" max="${c.max}" placeholder="0" oninput="calcPractical()">
+          <span class="max-lbl">/ ${c.max}</span>
+        </div>
+        <div class="field-error" id="${c.id}-err">Max is ${c.max}</div>
+      </div>
+      <div class="w-val" id="${c.id}-w">—</div>
+    </div>
+  `).join('');
+}
+
+function calcPractical() {
+  let total = 0, hasAny = false;
+  const errorFields = [];
+
+  practicalComponents.forEach(c => {
+    const valid = validateInput(c.id, c.max);
+    const v = getVal(c.id);
+    if (!valid) { errorFields.push(c.name); setW(c.id + '-w', null); return; }
+    if (v !== null) { const w = (v / c.max) * c.weight; setW(c.id + '-w', w); total += w; hasAny = true; }
+    else setW(c.id + '-w', null);
+  });
+
+  setBanner('p-error-banner', 'p-error-msg', errorFields);
+
+  if (hasAny && errorFields.length === 0) {
+    applyResult((total / 100) * 100, {
+      totalId:'p-total', pctId:'p-pct', statusId:'p-status', subId:'p-status-sub',
+      barId:'p-bar', barLblId:'p-bar-lbl', motiveId:'p-motive',
+      motiveTextId:'p-motive-text', motiveAuthorId:'p-motive-author',
+      summaryId:'practical-summary', placeholderId:'practical-placeholder'
+    }, total);
+  } else if (!hasAny) {
+    document.getElementById('practical-summary').classList.remove('visible');
+    document.getElementById('p-motive').classList.remove('visible');
+    document.getElementById('practical-placeholder').style.display = '';
+  }
+}
+
+buildPractical();
+
+/* ── Mascot wiggle ── */
+const mascotBubbles = [
+  "Study hard! 📚", "You got this! 💪", "Practicals = fun! 🧪",
+  "Keep going! 🚀", "Top marks! 🏆", "Lab time! ⚗️"
+];
+function mascotWiggle() {
+  const mc = document.getElementById('mascot-container');
+  const bubble = document.getElementById('speech-bubble');
+  const txt = mc.querySelector('text');
+  txt.textContent = mascotBubbles[Math.floor(Math.random() * mascotBubbles.length)];
+  bubble.style.transition = 'opacity 0.2s';
+  bubble.style.opacity = '1';
+  mc.style.animation = 'none';
+  mc.offsetHeight; // reflow
+  mc.style.animation = 'mascotBounce 0.4s ease';
+  clearTimeout(mc._hideTimer);
+  mc._hideTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 2200);
+}
+// Idle bounce
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  @keyframes mascotBounce { 0%,100%{transform:translateY(0) rotate(0deg)} 25%{transform:translateY(-10px) rotate(-5deg)} 75%{transform:translateY(-5px) rotate(5deg)} }
+  @keyframes mascotFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  #mascot-container { animation: mascotFloat 3s ease-in-out infinite; }
+  #mascot-container:hover { filter: drop-shadow(0 4px 12px rgba(201,168,76,0.5)); }
+`;
+document.head.appendChild(styleEl);
+</script>
+</body>
+</html>
